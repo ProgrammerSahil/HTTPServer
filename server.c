@@ -4,35 +4,22 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+int setSocket(int sockfd, int opt);
+int bindSocket(struct sockaddr_in server_address, int sockfd);
+
+
 int main(void){
 
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   int opt = 1;
-  setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-  if(sockfd < 0){
-    perror("Socket connection error!");
-    return 1;
-  }
-
-  printf("Socket connected successfully!\n");
+  
+  int setSocketOutput = setSocket(sockfd, opt);
 
   struct sockaddr_in server_address;
 
-  memset(&server_address, 0, sizeof(server_address));
+  int bindingOutput = bindSocket(server_address, sockfd);
 
-  server_address.sin_family = AF_INET;
-  server_address.sin_port = htons(8080);
-  server_address.sin_addr.s_addr = INADDR_ANY;
   
-  int bindOutput = bind(sockfd, (struct sockaddr *) &server_address, sizeof(server_address));
-
-  if(bindOutput == -1){
-    printf("Error binding socket");
-    return 1;
-  }
-
-  printf("Binding successful!\n");
 
   int listeningOutput = listen(sockfd, 10);
 
@@ -76,5 +63,35 @@ int main(void){
 
 
 
+  return 0;
+}
+
+int setSocket(int sockfd, int opt){
+  setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+  if(sockfd < 0){
+    perror("Socket connection error!");
+    return 1;
+  }
+
+  printf("Socket connected successfully!\n");
+  return 0;
+}
+
+int bindSocket(struct sockaddr_in server_address, int sockfd){
+  memset(&server_address, 0, sizeof(server_address));
+
+  server_address.sin_family = AF_INET;
+  server_address.sin_port = htons(8080);
+  server_address.sin_addr.s_addr = INADDR_ANY;
+  
+  int bindOutput = bind(sockfd, (struct sockaddr *) &server_address, sizeof(server_address));
+
+  if(bindOutput == -1){
+    printf("Error binding socket");
+    return 1;
+  }
+
+  printf("Binding successful!\n");
   return 0;
 }
