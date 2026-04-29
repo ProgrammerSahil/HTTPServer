@@ -49,13 +49,35 @@ int main(void) {
       printf("recv failure!");
       return 1;
     }
+    char method[16], path[256], protocol[16];
 
-    printf("%s\n", buffer);
-    char *outBuffer =
-        "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, world!\r\n";
+    sscanf(buffer, "%s %s %s", method, path, protocol);
+    printf("Requested Path: %s", path);
 
-    int sendOutput = send(client_fd, outBuffer, (int)strlen(outBuffer), 0);
+    FILE *file_to_serve = NULL;
+    char *headers = NULL;
 
+    if(strcmp(path, "/") == 0 || strcmp(path, "/index.html") == 0){
+      file_to_serve = fopen("index.html", "r");
+      headers = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+    } else if(strcmp(path, "/style.css") == 0){
+      file_to_serve = fopen("style.css", "r");
+      headers = "HTTP/1.1 200 OK\r\nContent-Type: text/css\r\n\r\n";
+    }
+
+    if(file_to_serve == NULL){
+      char *not_found = "HTTP/1.1 404 Not Found\r\n\r\n404: File Not Found";
+      send(client_fd, not_found, strlen(not_found), 0);
+    } else {
+      send(client_fd, headers, strlen(headers), 0);
+
+      char file_buffer[4096];
+      size_t bytes_read;
+      while((bytes_read = fread(file_buffer, 1, sizeof(file_buffer), file_to_serve)) > 0){
+        send(client_fd, file_buffer, bytes_read, 0);
+      }
+      fclose(file_to_serve);
+    }
     close(client_fd);
   }
 
